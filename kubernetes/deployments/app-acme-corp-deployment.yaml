@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-acme-corp
+  namespace: tenant-acme-corp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-acme-corp
+  template:
+    metadata:
+      labels:
+        app: app-acme-corp
+    spec:
+      containers:
+      - name: app
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-acme-corp
+  namespace: tenant-acme-corp
+spec:
+  selector:
+    app: app-acme-corp
+  ports:
+  - port: 80
+    targetPort: 80
