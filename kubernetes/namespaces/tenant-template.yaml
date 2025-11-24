@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-{{TENANT_ID}}
+  labels:
+    tenant-id: "{{TENANT_ID}}"
+    environment: "production"
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota
+  namespace: tenant-{{TENANT_ID}}
+spec:
+  hard:
+    requests.cpu: "500m"        # 0.5 CPU cores
+    requests.memory: 1Gi        # 1GB RAM
+    limits.cpu: "1"             # Max 1 CPU core
+    limits.memory: 2Gi          # Max 2GB RAM
+    pods: "20"                  # Max 20 pods
+    services: "10"              # Max 10 services
+    persistentvolumeclaims: "5" # Max 5 PVCs
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant-limits
+  namespace: tenant-{{TENANT_ID}}
+spec:
+  limits:
+  - max:
+      cpu: "500m"
+      memory: "512Mi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+    default:
+      cpu: "100m"
+      memory: "128Mi"
+    defaultRequest:
+      cpu: "50m"
+      memory: "64Mi"
+    type: Container

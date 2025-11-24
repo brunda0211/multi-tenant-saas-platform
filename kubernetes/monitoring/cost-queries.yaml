@@ -1,0 +1,45 @@
+# AWS Pricing (as of 2024)
+# t3.small spot: ~$0.0062/hour = $0.0000017/second
+# db.t3.micro: ~$0.017/hour = $0.0000047/second
+# EBS gp3: $0.08/GB/month = $0.0000001/GB/second
+
+# CPU cost per tenant (seconds * $0.05 per vCPU-hour)
+sum by (namespace) (
+  rate(container_cpu_usage_seconds_total{namespace=~"tenant-.*"}[1h])
+) * 0.05
+
+# Memory cost per tenant (GB-hours * $0.01 per GB-hour)
+sum by (namespace) (
+  container_memory_usage_bytes{namespace=~"tenant-.*"} / 1024 / 1024 / 1024
+) * 0.01
+
+# Total monthly cost estimate per tenant
+(
+  sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~"tenant-.*"}[1h])) * 0.05 +
+  sum by (namespace) (container_memory_usage_bytes{namespace=~"tenant-.*"} / 1024 / 1024 / 1024) * 0.01
+) * 730
+
+# Network cost per tenant (GB transferred * $0.09/GB)
+sum by (namespace) (
+  rate(container_network_transmit_bytes_total{namespace=~"tenant-.*"}[1h])
+) * 3600 / 1024 / 1024 / 1024 * 0.09
+
+# Storage cost per tenant (GB * $0.10/GB/month)
+sum by (namespace) (
+  kubelet_volume_stats_used_bytes{namespace=~"tenant-.*"}
+) / 1024 / 1024 / 1024 * 0.10
+
+# Pod count per tenant
+count by (namespace) (
+  kube_pod_info{namespace=~"tenant-.*"}
+)
+
+# CPU requests per tenant
+sum by (namespace) (
+  kube_pod_container_resource_requests{namespace=~"tenant-.*", resource="cpu"}
+)
+
+# Memory requests per tenant
+sum by (namespace) (
+  kube_pod_container_resource_requests{namespace=~"tenant-.*", resource="memory"}
+) / 1024 / 1024 / 1024
